@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Detective's Diner — A Murder Mystery Dining Experience</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C9A84C;
+  --gold-light:#E8C96A;
+  --gold-dim:#7A5F2A;
+  --crimson:#8B1A1A;
+  --crimson-bright:#C0392B;
+  --ink:#0A0806;
+  --ink-2:#110E0A;
+  --ink-3:#1A1511;
+  --parchment:#F5EDD6;
+  --smoke:#2A2420;
+  --text-muted:#7A6A55;
+  --text-dim:#4A3D2E;
+  --serif:'Playfair Display',Georgia,serif;
+  --body:'Cormorant Garamond',Georgia,serif;
+  --mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth;cursor:crosshair}
+body{background:var(--ink);color:var(--parchment);font-family:var(--body);overflow-x:hidden;line-height:1.6}
+::selection{background:var(--crimson);color:var(--parchment)}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--ink)}
+::-webkit-scrollbar-thumb{background:var(--gold-dim)}
+
+/* PARTICLES */
+#particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:hidden}
+.particle{position:absolute;width:2px;height:2px;background:rgba(201,168,76,0.4);border-radius:50%;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(100vh) translateX(0);opacity:0}10%{opacity:1}90%{opacity:.6}100%{transform:translateY(-100px) translateX(calc(var(--drift,0)*60px));opacity:0}}
+
+/* NAV */
+nav{position:fixed;top:0;width:100%;z-index:100;padding:1.2rem 3rem;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(10,8,6,0.95),transparent);backdrop-filter:blur(2px);transition:all .4s}
+nav.scrolled{background:rgba(10,8,6,0.97);border-bottom:1px solid rgba(201,168,76,0.15)}
+.nav-logo{font-family:var(--serif);font-size:1.3rem;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;font-weight:700}
+.nav-logo span{color:var(--crimson)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{color:var(--text-muted);text-decoration:none;font-family:var(--mono);font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;transition:color .3s;position:relative}
+.nav-links a::after{content:'';position:absolute;bottom:-2px;left:0;width:0;height:1px;background:var(--gold);transition:width .3s}
+.nav-links a:hover{color:var(--gold)}
+.nav-links a:hover::after{width:100%}
+.nav-cta{background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:var(--mono);font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;padding:.6rem 1.4rem;cursor:pointer;transition:all .3s}
+.nav-cta:hover{background:var(--gold);color:var(--ink)}
+.audio-btn{background:none;border:1px solid rgba(201,168,76,0.3);color:var(--text-muted);font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;padding:.5rem 1rem;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:.5rem}
+.audio-btn:hover{border-color:var(--gold);color:var(--gold)}
+.audio-btn .dot{width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:pulse-dot 1.5s ease-in-out infinite}
+.audio-btn.playing .dot{background:var(--gold)}
+@keyframes pulse-dot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.7}}
+
+/* HERO */
+#hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;z-index:2}
+.hero-bg{position:absolute;inset:0;z-index:0}
+.rain-canvas{position:absolute;inset:0;opacity:.35}
+.fog-layer{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 80%,rgba(139,26,26,0.15) 0%,transparent 60%),radial-gradient(ellipse at 20% 50%,rgba(201,168,76,0.05) 0%,transparent 50%)}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(201,168,76,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,0.03) 1px,transparent 1px);background-size:80px 80px}
+.hero-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(10,8,6,0.7) 100%)}
+.silhouettes{position:absolute;bottom:0;left:0;width:100%;height:60%;display:flex;align-items:flex-end;justify-content:space-between;padding:0 5%}
+.sil{position:absolute;bottom:0;width:80px;background:rgba(10,8,6,0.9);clip-path:var(--clip)}
+.hero-content{position:relative;z-index:5;text-align:center;max-width:900px;padding:2rem;animation:heroReveal 1.8s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0}
+@keyframes heroReveal{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.hero-badge{display:inline-block;font-family:var(--mono);font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(201,168,76,0.3);padding:.4rem 1.2rem;margin-bottom:2rem;animation:flicker 4s ease-in-out infinite}
+@keyframes flicker{0%,100%{opacity:1}93%{opacity:1}94%{opacity:.4}96%{opacity:1}98%{opacity:.6}99%{opacity:1}}
+.hero-headline{font-family:var(--serif);font-size:clamp(3rem,7vw,6rem);font-weight:900;line-height:1.05;margin-bottom:1.5rem;color:var(--parchment);text-shadow:0 0 80px rgba(139,26,26,0.5)}
+.hero-headline em{color:var(--crimson-bright);font-style:italic;display:block}
+.hero-sub{font-family:var(--body);font-size:clamp(1.1rem,2.5vw,1.5rem);font-weight:300;color:rgba(245,237,214,0.7);max-width:600px;margin:0 auto 3rem;font-style:italic;line-height:1.7}
+.hero-btns{display:flex;gap:1.2rem;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--crimson);color:var(--parchment);font-family:var(--mono);font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;padding:1rem 2.5rem;border:none;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+.btn-primary::before{content:'';position:absolute;inset:0;background:var(--gold);transform:translateX(-101%);transition:transform .4s cubic-bezier(0.16,1,0.3,1)}
+.btn-primary:hover::before{transform:translateX(0)}
+.btn-primary:hover{color:var(--ink)}
+.btn-primary span{position:relative;z-index:1}
+.btn-secondary{background:transparent;color:var(--parchment);font-family:var(--mono);font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;padding:1rem 2.5rem;border:1px solid rgba(245,237,214,0.3);cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:.7rem}
+.btn-secondary:hover{border-color:var(--gold);color:var(--gold)}
+.play-icon{width:18px;height:18px;border:1px solid currentColor;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem}
+.scroll-hint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.5rem;color:var(--text-muted);font-family:var(--mono);font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;animation:bounce 2s ease-in-out infinite}
+.scroll-hint::after{content:'';width:1px;height:40px;background:linear-gradient(to bottom,var(--gold-dim),transparent);display:block}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+.hero-case-num{position:absolute;top:50%;right:3rem;transform:translateY(-50%);font-family:var(--mono);font-size:.65rem;letter-spacing:.3em;color:var(--text-dim);writing-mode:vertical-rl;text-transform:uppercase}
+
+/* SECTIONS */
+section{position:relative;z-index:2;padding:8rem 3rem}
+.section-label{font-family:var(--mono);font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;display:flex;align-items:center;gap:1rem}
+.section-label::before{content:'';width:40px;height:1px;background:var(--gold-dim)}
+h2.section-title{font-family:var(--serif);font-size:clamp(2rem,4vw,3.5rem);font-weight:700;line-height:1.15;margin-bottom:1.5rem;color:var(--parchment)}
+h2.section-title em{color:var(--gold);font-style:italic}
+
+/* HOW IT WORKS */
+#how-it-works{background:var(--ink-2);border-top:1px solid rgba(201,168,76,0.1);border-bottom:1px solid rgba(201,168,76,0.1)}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:5rem;position:relative}
+.how-grid::before{content:'';position:absolute;top:3rem;left:16.67%;right:16.67%;height:1px;background:linear-gradient(to right,transparent,var(--gold-dim),var(--gold-dim),transparent);z-index:0}
+.how-step{text-align:center;padding:3rem 2.5rem;position:relative;z-index:1}
+.how-step:not(:last-child)::after{content:'';position:absolute;right:0;top:50%;transform:translateY(-50%);width:1px;height:60%;background:linear-gradient(to bottom,transparent,rgba(201,168,76,0.2),transparent)}
+.step-num{font-family:var(--serif);font-size:4rem;font-weight:900;color:transparent;-webkit-text-stroke:1px rgba(201,168,76,0.25);line-height:1;margin-bottom:1.5rem}
+.step-icon{width:72px;height:72px;border:1px solid rgba(201,168,76,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:1.8rem;transition:all .4s;background:rgba(201,168,76,0.04)}
+.how-step:hover .step-icon{border-color:var(--gold);background:rgba(201,168,76,0.1);box-shadow:0 0 30px rgba(201,168,76,0.1)}
+.step-title{font-family:var(--serif);font-size:1.3rem;color:var(--parchment);margin-bottom:.8rem;font-weight:700}
+.step-desc{font-family:var(--body);font-size:1rem;color:var(--text-muted);line-height:1.7;font-weight:300}
+
+/* EXPERIENCE CARDS */
+#experience{background:linear-gradient(to bottom,var(--ink-2),var(--ink))}
+.exp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:5rem;background:rgba(201,168,76,0.1)}
+.exp-card{background:var(--ink-2);padding:3rem 2.5rem;transition:all .4s;cursor:default;position:relative;overflow:hidden}
+.exp-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(139,26,26,0.08),transparent);opacity:0;transition:opacity .4s}
+.exp-card:hover{background:var(--ink-3)}
+.exp-card:hover::before{opacity:1}
+.exp-card-icon{font-size:2rem;margin-bottom:1.5rem;display:block}
+.exp-card-title{font-family:var(--serif);font-size:1.2rem;color:var(--gold);margin-bottom:.8rem;font-weight:700}
+.exp-card-desc{font-size:1rem;color:var(--text-muted);line-height:1.7;font-weight:300}
+.exp-card-num{position:absolute;bottom:1.5rem;right:2rem;font-family:var(--mono);font-size:.65rem;color:var(--text-dim);letter-spacing:.2em}
+
+/* EVIDENCE BOARD */
+#evidence{background:var(--ink-3);padding:8rem 3rem}
+.board-container{background:#1a1208;border:2px solid rgba(139,100,30,0.3);border-radius:4px;padding:3rem;margin-top:4rem;position:relative;box-shadow:inset 0 0 60px rgba(0,0,0,0.5)}
+.board-container::before{content:'CASE FILE #001 — THE MANOR MYSTERY';position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:.65rem;letter-spacing:.3em;color:var(--gold-dim);background:var(--ink-3);padding:0 1rem;white-space:nowrap}
+.board-title{font-family:var(--serif);font-size:1.1rem;color:var(--crimson);margin-bottom:2rem;text-transform:uppercase;letter-spacing:.2em;font-weight:700}
+.evidence-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;align-items:start}
+.suspect-card{position:relative;text-align:center;cursor:pointer}
+.suspect-photo{width:100%;aspect-ratio:3/4;background:var(--ink-2);border:2px solid rgba(201,168,76,0.2);position:relative;overflow:hidden;margin-bottom:1rem;transition:all .3s}
+.suspect-card:hover .suspect-photo{border-color:var(--crimson)}
+.suspect-silhouette{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:4rem;opacity:.4}
+.suspect-photo .stamp{position:absolute;top:8px;right:8px;background:rgba(139,26,26,0.9);color:var(--parchment);font-family:var(--mono);font-size:.55rem;letter-spacing:.15em;padding:.3rem .5rem;text-transform:uppercase}
+.suspect-name{font-family:var(--serif);font-size:1rem;color:var(--parchment);font-weight:700}
+.suspect-title{font-family:var(--mono);font-size:.65rem;color:var(--text-muted);letter-spacing:.15em;text-transform:uppercase;margin-top:.3rem}
+.clue-strings{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.board-notes{grid-column:1/-1;display:flex;gap:1.5rem;margin-top:2rem;flex-wrap:wrap}
+.sticky{background:#2A1F0A;border-left:3px solid var(--crimson);padding:1rem 1.2rem;font-family:var(--body);font-size:.95rem;color:rgba(245,237,214,0.7);max-width:220px;font-style:italic;transform:var(--rot,rotate(0deg));flex-shrink:0}
+.sticky-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--crimson);text-transform:uppercase;margin-bottom:.5rem;font-style:normal}
+.red-string{position:absolute;width:2px;background:linear-gradient(to bottom,rgba(192,57,43,0.8),rgba(192,57,43,0.2));transform-origin:top center;pointer-events:none}
+
+/* TRAILER */
+#trailer{background:var(--ink);text-align:center}
+.trailer-wrapper{position:relative;max-width:900px;margin:4rem auto 0;aspect-ratio:16/9;background:#0A0806;border:1px solid rgba(201,168,76,0.15);overflow:hidden;cursor:pointer}
+.trailer-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(139,26,26,0.2),transparent 60%);display:flex;align-items:center;justify-content:center}
+.trailer-fake-scene{position:absolute;inset:0;background:linear-gradient(135deg,rgba(26,21,17,0.9),rgba(10,8,6,0.95));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2rem}
+.film-grain{position:absolute;inset:0;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")}
+.play-btn-large{width:80px;height:80px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:var(--gold);transition:all .4s;position:relative;z-index:2;margin:0 auto}
+.play-btn-large::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(201,168,76,0.3);animation:ripple 2s ease-out infinite}
+.play-btn-large::after{content:'';position:absolute;inset:-14px;border-radius:50%;border:1px solid rgba(201,168,76,0.15);animation:ripple 2s ease-out infinite .5s}
+@keyframes ripple{0%{transform:scale(1);opacity:1}100%{transform:scale(1.3);opacity:0}}
+.trailer-wrapper:hover .play-btn-large{background:var(--gold);color:var(--ink);box-shadow:0 0 40px rgba(201,168,76,0.4)}
+.trailer-caption{font-family:var(--serif);font-size:1.5rem;font-style:italic;color:var(--parchment);opacity:.8;max-width:500px;line-height:1.4}
+.trailer-meta{font-family:var(--mono);font-size:.65rem;letter-spacing:.3em;color:var(--gold-dim);text-transform:uppercase}
+.reactions{display:flex;gap:2rem;justify-content:center;margin-top:3rem;flex-wrap:wrap}
+.reaction{font-family:var(--body);font-size:.95rem;color:var(--text-muted);font-style:italic;border-left:1px solid var(--crimson);padding-left:1rem;text-align:left;max-width:200px}
+.reaction strong{color:var(--parchment);font-weight:400;display:block;margin-top:.3rem;font-family:var(--mono);font-size:.65rem;letter-spacing:.1em;font-style:normal;color:var(--gold-dim)}
+
+/* COUNTDOWN + EVENT */
+#event{background:var(--ink-2);border-top:1px solid rgba(139,26,26,0.3)}
+.event-grid{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:start;margin-top:5rem}
+.event-details{display:grid;gap:1.5rem}
+.event-detail-row{display:flex;align-items:center;gap:1.5rem;padding:1.2rem 0;border-bottom:1px solid rgba(245,237,214,0.06)}
+.detail-icon{width:44px;height:44px;border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.detail-label{font-family:var(--mono);font-size:.65rem;letter-spacing:.2em;color:var(--text-muted);text-transform:uppercase}
+.detail-value{font-family:var(--serif);font-size:1.15rem;color:var(--parchment)}
+.urgency{display:inline-flex;align-items:center;gap:.7rem;background:rgba(139,26,26,0.2);border:1px solid rgba(192,57,43,0.3);padding:.7rem 1.2rem;margin:1.5rem 0;animation:urgency-pulse 2s ease-in-out infinite}
+@keyframes urgency-pulse{0%,100%{border-color:rgba(192,57,43,0.3)}50%{border-color:rgba(192,57,43,0.7)}}
+.urgency-dot{width:8px;height:8px;border-radius:50%;background:var(--crimson-bright);animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.urgency-text{font-family:var(--mono);font-size:.75rem;letter-spacing:.15em;color:var(--crimson-bright)}
+.countdown-box{text-align:center}
+.countdown-title{font-family:var(--serif);font-size:1.5rem;color:var(--gold);margin-bottom:2.5rem;font-style:italic}
+.countdown-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:3rem}
+.cd-unit{text-align:center;background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.15);padding:2rem 1rem;position:relative}
+.cd-num{font-family:var(--serif);font-size:clamp(2rem,4vw,3rem);font-weight:900;color:var(--parchment);line-height:1;display:block}
+.cd-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.25em;color:var(--text-muted);text-transform:uppercase;margin-top:.5rem;display:block}
+.ticket-tiers{display:grid;gap:1rem}
+.ticket{background:var(--ink-3);border:1px solid rgba(201,168,76,0.15);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;transition:all .3s;cursor:pointer}
+.ticket:hover,.ticket.featured{border-color:var(--gold);background:rgba(201,168,76,0.06)}
+.ticket.featured{position:relative}
+.ticket.featured::before{content:'MOST POPULAR';position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--ink);font-family:var(--mono);font-size:.55rem;letter-spacing:.2em;padding:.2rem .8rem;white-space:nowrap;font-weight:700}
+.ticket-name{font-family:var(--serif);font-size:1rem;color:var(--parchment)}
+.ticket-incl{font-family:var(--mono);font-size:.65rem;color:var(--text-muted);letter-spacing:.1em;margin-top:.3rem}
+.ticket-price{font-family:var(--serif);font-size:1.4rem;color:var(--gold);font-weight:700}
+.ticket-price sup{font-size:.8rem;top:-.3em;position:relative}
+.btn-book{width:100%;margin-top:2rem;background:var(--crimson);color:var(--parchment);font-family:var(--mono);font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;padding:1.2rem;border:none;cursor:pointer;transition:all .3s}
+.btn-book:hover{background:var(--crimson-bright);box-shadow:0 0 30px rgba(192,57,43,0.3)}
+
+/* TESTIMONIALS */
+#testimonials{background:linear-gradient(to bottom,var(--ink),var(--ink-2))}
+.reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:5rem}
+.review{background:var(--ink-3);border:1px solid rgba(201,168,76,0.1);padding:2.5rem;position:relative;transition:all .4s}
+.review::before{content:'\201C';font-family:var(--serif);font-size:6rem;color:rgba(201,168,76,0.1);position:absolute;top:-1rem;left:1.5rem;line-height:1;pointer-events:none}
+.review:hover{border-color:rgba(201,168,76,0.25);transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,0.3)}
+.review-stars{color:var(--gold);font-size:.9rem;margin-bottom:1.2rem;letter-spacing:.2em}
+.review-text{font-family:var(--body);font-size:1.05rem;color:rgba(245,237,214,0.8);font-style:italic;line-height:1.8;margin-bottom:1.5rem}
+.review-author{display:flex;align-items:center;gap:1rem}
+.reviewer-avatar{width:40px;height:40px;border-radius:50%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:.9rem;color:var(--gold)}
+.reviewer-name{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase}
+.reviewer-tag{font-family:var(--mono);font-size:.6rem;color:var(--gold-dim);letter-spacing:.1em;margin-top:.2rem}
+
+/* GALLERY */
+#gallery{background:var(--ink-2);padding:8rem 0}
+.gallery-header{padding:0 3rem;margin-bottom:4rem}
+.gallery-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:auto;gap:2px}
+.gal-item{overflow:hidden;background:var(--ink-3);position:relative;aspect-ratio:1;cursor:pointer}
+.gal-item:nth-child(1){grid-column:span 2;grid-row:span 2;aspect-ratio:auto}
+.gal-item:nth-child(4){grid-column:span 2;aspect-ratio:auto}
+.gal-scene{width:100%;height:100%;min-height:200px;display:flex;align-items:center;justify-content:center;font-size:3rem;opacity:.3;transition:all .5s;background:linear-gradient(135deg,var(--scene-a,#0A0806),var(--scene-b,#1A1511))}
+.gal-item:hover .gal-scene{opacity:.6;transform:scale(1.05)}
+.gal-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,8,6,0.9),transparent 50%);opacity:0;transition:opacity .4s;display:flex;align-items:flex-end;padding:1.5rem}
+.gal-item:hover .gal-overlay{opacity:1}
+.gal-caption{font-family:var(--mono);font-size:.65rem;letter-spacing:.2em;color:var(--parchment);text-transform:uppercase}
+
+/* FAQ */
+#faq{background:var(--ink)}
+.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:5rem;border:1px solid rgba(201,168,76,0.1)}
+.faq-item{border-bottom:1px solid rgba(201,168,76,0.1);padding:2rem 2.5rem;cursor:pointer;transition:background .3s;position:relative}
+.faq-item:nth-child(odd){border-right:1px solid rgba(201,168,76,0.1)}
+.faq-item:hover{background:rgba(201,168,76,0.03)}
+.faq-item.open{background:rgba(139,26,26,0.06)}
+.faq-q{font-family:var(--serif);font-size:1.05rem;color:var(--parchment);display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.faq-toggle{color:var(--gold);font-size:1.2rem;transition:transform .3s;flex-shrink:0}
+.faq-item.open .faq-toggle{transform:rotate(45deg)}
+.faq-a{font-family:var(--body);font-size:.95rem;color:var(--text-muted);margin-top:1rem;line-height:1.8;max-height:0;overflow:hidden;transition:max-height .4s ease}
+.faq-item.open .faq-a{max-height:200px}
+
+/* FINAL CTA */
+#final-cta{background:var(--ink-2);text-align:center;padding:12rem 3rem;position:relative;overflow:hidden}
+.cta-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(139,26,26,0.2),transparent 60%)}
+.cta-tagline{font-family:var(--mono);font-size:.75rem;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:2rem}
+.cta-headline{font-family:var(--serif);font-size:clamp(3rem,8vw,7rem);font-weight:900;line-height:1.0;color:var(--parchment);margin-bottom:3rem;position:relative;z-index:1;text-shadow:0 0 100px rgba(139,26,26,0.5)}
+.cta-headline span{color:var(--crimson-bright);display:block;font-style:italic}
+.cta-sub{font-family:var(--body);font-size:1.2rem;color:var(--text-muted);font-style:italic;margin-bottom:3rem;position:relative;z-index:1}
+.btn-final{background:var(--gold);color:var(--ink);font-family:var(--mono);font-size:.85rem;letter-spacing:.25em;text-transform:uppercase;padding:1.3rem 4rem;border:none;cursor:pointer;transition:all .3s;font-weight:700;position:relative;z-index:1}
+.btn-final:hover{background:var(--parchment);box-shadow:0 0 50px rgba(201,168,76,0.3)}
+.cta-fine{font-family:var(--mono);font-size:.65rem;letter-spacing:.15em;color:var(--text-dim);margin-top:2rem;text-transform:uppercase;position:relative;z-index:1}
+
+/* FOOTER */
+footer{background:var(--ink);border-top:1px solid rgba(201,168,76,0.1);padding:4rem 3rem 2rem}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4rem;margin-bottom:4rem}
+.footer-brand{font-family:var(--serif);font-size:1.4rem;color:var(--gold);margin-bottom:1rem;letter-spacing:.1em;font-weight:700}
+.footer-tagline{font-family:var(--body);font-size:.95rem;color:var(--text-muted);font-style:italic;line-height:1.7;max-width:280px}
+.footer-col-title{font-family:var(--mono);font-size:.65rem;letter-spacing:.25em;color:var(--gold-dim);text-transform:uppercase;margin-bottom:1.2rem}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:.7rem}
+.footer-links a{color:var(--text-muted);text-decoration:none;font-family:var(--body);font-size:.95rem;transition:color .3s}
+.footer-links a:hover{color:var(--gold)}
+.social-row{display:flex;gap:1rem;margin-top:1.5rem}
+.social-btn{width:40px;height:40px;border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;color:var(--text-muted);transition:all .3s;cursor:pointer;text-decoration:none}
+.social-btn:hover{border-color:var(--gold);color:var(--gold)}
+.footer-divider{border:none;border-top:1px solid rgba(245,237,214,0.06);margin-bottom:2rem}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center}
+.footer-copy{font-family:var(--mono);font-size:.65rem;color:var(--text-dim);letter-spacing:.1em}
+.bms-badge{border:1px solid rgba(201,168,76,0.2);padding:.4rem 1rem;font-family:var(--mono);font-size:.6rem;letter-spacing:.15em;color:var(--gold-dim);text-transform:uppercase;cursor:pointer;transition:all .3s}
+.bms-badge:hover{border-color:var(--gold);color:var(--gold)}
+
+/* REVEAL ANIMATIONS */
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .9s cubic-bezier(0.16,1,0.3,1),transform .9s cubic-bezier(0.16,1,0.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:.15s}
+.reveal-delay-2{transition-delay:.3s}
+.reveal-delay-3{transition-delay:.45s}
+
+/* MOBILE */
+@media(max-width:900px){
+  nav{padding:1rem 1.5rem}
+  .nav-links{display:none}
+  section{padding:5rem 1.5rem}
+  .how-grid{grid-template-columns:1fr;gap:0}
+  .how-grid::before{display:none}
+  .how-step:not(:last-child)::after{right:auto;top:auto;bottom:0;left:50%;transform:translateX(-50%);width:60%;height:1px}
+  .exp-grid{grid-template-columns:1fr 1fr}
+  .event-grid{grid-template-columns:1fr}
+  .reviews-grid{grid-template-columns:1fr}
+  .gallery-grid{grid-template-columns:repeat(2,1fr)}
+  .gal-item:nth-child(1){grid-column:span 1;grid-row:span 1}
+  .gal-item:nth-child(4){grid-column:span 1}
+  .faq-grid{grid-template-columns:1fr}
+  .faq-item:nth-child(odd){border-right:none}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .evidence-grid{grid-template-columns:repeat(2,1fr)}
+  .hero-case-num{display:none}
+}
+@media(max-width:600px){
+  .exp-grid{grid-template-columns:1fr}
+  .footer-grid{grid-template-columns:1fr}
+  .countdown-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- PARTICLES -->
+<div id="particles"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-logo">The <span>Detective's</span> Diner</div>
+  <ul class="nav-links">
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#event">Book Now</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <div style="display:flex;gap:.8rem;align-items:center">
+    <button class="audio-btn" id="audioBtn" onclick="toggleAudio()">
+      <span class="dot"></span>
+      <span id="audioLabel">Ambience</span>
+    </button>
+    <button class="nav-cta" onclick="document.getElementById('event').scrollIntoView({behavior:'smooth'})">Reserve</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg">
+    <canvas class="rain-canvas" id="rainCanvas"></canvas>
+    <div class="fog-layer"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-vignette"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">🔍 Now Playing in Bengaluru & Mangaluru</div>
+    <h1 class="hero-headline">
+      Dinner Was Served.
+      <em>Then Someone Died.</em>
+    </h1>
+    <p class="hero-sub">An immersive 3-hour mystery dining experience where YOU become the detective. Can you solve the case before dessert?</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="document.getElementById('event').scrollIntoView({behavior:'smooth'})">
+        <span>Book Your Seat</span>
+      </button>
+      <button class="btn-secondary" onclick="document.getElementById('trailer').scrollIntoView({behavior:'smooth'})">
+        <span class="play-icon">▶</span>
+        Watch Trailer
+      </button>
+    </div>
+  </div>
+  <div class="scroll-hint">Scroll to begin</div>
+  <div class="hero-case-num">Case No. 001 · The Manor Mystery</div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="section-label reveal">Chapter One</div>
+    <h2 class="section-title reveal reveal-delay-1">How the <em>night unfolds</em></h2>
+    <div class="how-grid">
+      <div class="how-step reveal">
+        <div class="step-num">01</div>
+        <div class="step-icon">🚪</div>
+        <div class="step-title">Arrive at the Diner</div>
+        <p class="step-desc">Step into a world of candlelight, secrets, and a meticulously crafted noir atmosphere. Your evening begins the moment you enter.</p>
+      </div>
+      <div class="how-step reveal reveal-delay-1">
+        <div class="step-num">02</div>
+        <div class="step-icon">🔎</div>
+        <div class="step-title">Interrogate & Uncover</div>
+        <p class="step-desc">Engage with live actors, examine hidden clues, and interrogate suspects between each course. Every bite brings new evidence.</p>
+      </div>
+      <div class="how-step reveal reveal-delay-2">
+        <div class="step-num">03</div>
+        <div class="step-icon">🕯️</div>
+        <div class="step-title">Solve Before Dessert</div>
+        <p class="step-desc">Submit your deductions before the final course. The most brilliant detective earns infamy — and a little something extra.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE CARDS -->
+<section id="experience">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="section-label reveal">Chapter Two</div>
+    <h2 class="section-title reveal reveal-delay-1">What awaits <em>inside</em></h2>
+    <div class="exp-grid">
+      <div class="exp-card reveal">
+        <span class="exp-card-icon">🎭</span>
+        <div class="exp-card-title">Live Actors</div>
+        <p class="exp-card-desc">Trained theatre professionals portray suspects, victims, and witnesses. Every interaction is unscripted chaos designed to mislead you.</p>
+        <div class="exp-card-num">01 / 06</div>
+      </div>
+      <div class="exp-card reveal reveal-delay-1">
+        <span class="exp-card-icon">🗝️</span>
+        <div class="exp-card-title">Hidden Clues</div>
+        <p class="exp-card-desc">Encrypted notes, suspicious objects, and secret compartments scattered throughout the venue. The devil is in the details.</p>
+        <div class="exp-card-num">02 / 06</div>
+      </div>
+      <div class="exp-card reveal reveal-delay-2">
+        <span class="exp-card-icon">🍽️</span>
+        <div class="exp-card-title">3-Course Dining</div>
+        <p class="exp-card-desc">A curated 3-course meal crafted by our culinary team, each dish thematically tied to the unfolding mystery. Suspects may be on the menu.</p>
+        <div class="exp-card-num">03 / 06</div>
+      </div>
+      <div class="exp-card reveal">
+        <span class="exp-card-icon">📖</span>
+        <div class="exp-card-title">Interactive Storytelling</div>
+        <p class="exp-card-desc">The narrative shifts based on your choices and interactions. No two evenings are ever the same — the story lives and breathes around you.</p>
+        <div class="exp-card-num">04 / 06</div>
+      </div>
+      <div class="exp-card reveal reveal-delay-1">
+        <span class="exp-card-icon">🤝</span>
+        <div class="exp-card-title">Team Gameplay</div>
+        <p class="exp-card-desc">Collaborate or compete with your table. Rival detective teams race to crack the case. Alliances form. Alliances shatter.</p>
+        <div class="exp-card-num">05 / 06</div>
+      </div>
+      <div class="exp-card reveal reveal-delay-2">
+        <span class="exp-card-icon">📸</span>
+        <div class="exp-card-title">Instagram-Worthy Atmosphere</div>
+        <p class="exp-card-desc">Every corner is a cinematic set piece. Gold accents, candlelight, fog, and Victorian props crafted for the discerning social feed.</p>
+        <div class="exp-card-num">06 / 06</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EVIDENCE BOARD -->
+<section id="evidence">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="section-label reveal">Classified Files</div>
+    <h2 class="section-title reveal reveal-delay-1">The <em>suspects</em></h2>
+    <p style="color:var(--text-muted);font-family:var(--body);font-style:italic;margin-top:-.5rem;margin-bottom:3rem" class="reveal reveal-delay-2">One of them is lying. All of them have motive. Can you tell which?</p>
+    <div class="board-container reveal">
+      <div class="board-title">⚠ Active Case Board — Do Not Remove Evidence</div>
+      <div class="evidence-grid">
+        <div class="suspect-card" onclick="toggleSuspect(this)">
+          <div class="suspect-photo">
+            <div class="suspect-silhouette">🎩</div>
+            <div class="stamp">Alibi: Weak</div>
+          </div>
+          <div class="suspect-name">Lord Ashford</div>
+          <div class="suspect-title">The Heir · Motive: Inheritance</div>
+        </div>
+        <div class="suspect-card" onclick="toggleSuspect(this)">
+          <div class="suspect-photo" style="--s-c:rgba(192,57,43,0.15)">
+            <div class="suspect-silhouette">👩‍🍳</div>
+            <div class="stamp" style="background:rgba(192,57,43,0.9)">Person of Interest</div>
+          </div>
+          <div class="suspect-name">Chef Margaux</div>
+          <div class="suspect-title">The Cook · Motive: Unknown</div>
+        </div>
+        <div class="suspect-card" onclick="toggleSuspect(this)">
+          <div class="suspect-photo">
+            <div class="suspect-silhouette">🕵️</div>
+            <div class="stamp">Alibi: Strong</div>
+          </div>
+          <div class="suspect-name">Dr. Vincent</div>
+          <div class="suspect-title">The Doctor · Motive: Blackmail</div>
+        </div>
+        <div class="suspect-card" onclick="toggleSuspect(this)">
+          <div class="suspect-photo">
+            <div class="suspect-silhouette">💃</div>
+            <div class="stamp" style="background:rgba(26,21,17,0.8);border:1px solid rgba(201,168,76,0.5);color:var(--gold)">???</div>
+          </div>
+          <div class="suspect-name">Lady Moira</div>
+          <div class="suspect-title">The Guest · Identity: Classified</div>
+        </div>
+        <div class="board-notes">
+          <div class="sticky" style="--rot:rotate(-1.5deg)">
+            <div class="sticky-label">Note — Case #001</div>
+            "The victim was last seen at 9:47pm near the wine cellar. The back door was unlocked."
+          </div>
+          <div class="sticky" style="--rot:rotate(1deg)">
+            <div class="sticky-label">Evidence</div>
+            "A pocket watch engraved with initials 'VM' was found under table 4. Whose initials are these?"
+          </div>
+          <div class="sticky" style="--rot:rotate(-0.5deg)">
+            <div class="sticky-label">Witness Account</div>
+            "She heard arguing. She heard glass breaking. Then she heard nothing."
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRAILER -->
+<section id="trailer">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="section-label reveal">Chapter Three</div>
+    <h2 class="section-title reveal reveal-delay-1">Watch the <em>trailer</em></h2>
+    <div class="trailer-wrapper reveal reveal-delay-2">
+      <div class="trailer-fake-scene">
+        <div class="film-grain"></div>
+        <div class="trailer-meta">The Detective's Diner — Season I · "The Manor Mystery"</div>
+        <div class="play-btn-large" onclick="showTrailerMsg()">▶</div>
+        <div class="trailer-caption">"In a room full of liars, the truth was hiding in plain sight."</div>
+        <div class="trailer-meta">3 min · Rated: 18+ · Themes of deception, murder, and fine dining</div>
+      </div>
+    </div>
+    <div class="reactions reveal">
+      <div class="reaction">"I screamed when the lights went out."<strong>— Priya M., Bengaluru</strong></div>
+      <div class="reaction">"We literally stood up to interrogate the waiter."<strong>— Rohan & Ananya</strong></div>
+      <div class="reaction">"The plot twist at dessert — I cannot."<strong>— @detectivediaries</strong></div>
+      <div class="reaction">"Better than anything on Netflix right now."<strong>— Karan S., Mangaluru</strong></div>
+    </div>
+  </div>
+</section>
+
+<!-- EVENT + COUNTDOWN -->
+<section id="event">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="section-label reveal">Next Performance</div>
+    <h2 class="section-title reveal reveal-delay-1">The <em>next case opens</em></h2>
+    <div class="event-grid">
+      <div>
+        <div class="event-details reveal">
+          <div class="event-detail-row">
+            <div class="detail-icon">📅</div>
+            <div>
+              <div class="detail-label">Date</div>
+              <div class="detail-value">Saturday, 14th June 2025</div>
+            </div>
+          </div>
+          <div class="event-detail-row">
+            <div class="detail-icon">🕖</div>
+            <div>
+              <div class="detail-label">Time</div>
+              <div class="detail-value">6:30 PM — 9:30 PM (Doors at 6:00 PM)</div>
+            </div>
+          </div>
+          <div class="event-detail-row">
+            <div class="detail-icon">📍</div>
+            <div>
+              <div class="detail-label">Location</div>
+              <div class="detail-value">The Vault Café, MG Road, Bengaluru</div>
+            </div>
+          </div>
+          <div class="event-detail-row">
+            <div class="detail-icon">🎭</div>
+            <div>
+              <div class="detail-label">Experience</div>
+              <div class="detail-value">The Manor Mystery — Episode I</div>
+            </div>
+          </div>
+        </div>
+        <div class="urgency reveal reveal-delay-1">
+          <span class="urgency-dot"></span>
+          <span class="urgency-text">Only 12 seats remaining · Selling fast</span>
+        </div>
+        <div style="margin-top:.5rem;font-family:var(--mono);font-size:.65rem;color:var(--text-dim);letter-spacing:.15em" class="reveal reveal-delay-2">
+          Mangaluru date: 28th June — Namma Café, Balmatta Road
+        </div>
+      </div>
+      <div class="countdown-box reveal reveal-delay-1">
+        <div class="countdown-title">Time until the murder...</div>
+        <div class="countdown-grid">
+          <div class="cd-unit"><span class="cd-num" id="cd-d">00</span><span class="cd-label">Days</span></div>
+          <div class="cd-unit"><span class="cd-num" id="cd-h">00</span><span class="cd-label">Hours</span></div>
+          <div class="cd-unit"><span class="cd-num" id="cd-m">00</span><span class="cd-label">Mins</span></div>
+          <div class="cd-unit"><span class="cd-num" id="cd-s">00</span><span class="cd-label">Secs</span></div>
+        </div>
+        <div class="ticket-tiers">
+          <div class="ticket" onclick="bookTicket('Detective')">
+            <div>
+              <div class="ticket-name">Detective's Seat</div>
+              <div class="ticket-incl">3-Course Meal · Script · Badge</div>
+            </div>
+            <div class="ticket-price"><sup>₹</sup>999</div>
+          </div>
+          <div class="ticket featured" onclick="bookTicket('Senior Detective')">
+            <div>
+              <div class="ticket-name">Senior Detective</div>
+              <div class="ticket-incl">All above + Wine Pairing · Priority Clues</div>
+            </div>
+            <div class="ticket-price"><sup>₹</sup>1,499</div>
+          </div>
+          <div class="ticket" onclick="bookTicket('Master Detective')">
+            <div>
+              <div class="ticket-name">Master Detective</div>
+              <div class="ticket-incl">All above + VIP Table · Early Access</div>
+            </div>
+            <div class="ticket-price"><sup>₹</sup>1,999</div>
+          </div>
+        </div>
+        <button class="btn-book" onclick="bookTicket('Senior Detective')">Reserve on BookMyShow →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="section-label reveal">Witness Statements</div>
+    <h2 class="section-title reveal reveal-delay-1">What the <em>detectives say</em></h2>
+    <div class="reviews-grid">
+      <div class="review reveal">
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">"This felt like being inside a Netflix crime series. The actors were so convincing I genuinely forgot it was theatre. My table was arguing about the killer until midnight."</p>
+        <div class="review-author">
+          <div class="reviewer-avatar">AP</div>
+          <div>
+            <div class="reviewer-name">Aditi Prasad</div>
+            <div class="reviewer-tag">Date Night · Bengaluru · Feb 2025</div>
+          </div>
+        </div>
+      </div>
+      <div class="review reveal reveal-delay-1">
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">"Best date night experience in the city. We both thought we solved it — we were both wrong. The food was incredible too. Coming back for the next episode."</p>
+        <div class="review-author">
+          <div class="reviewer-avatar">RK</div>
+          <div>
+            <div class="reviewer-name">Rohan & Kavya</div>
+            <div class="reviewer-tag">Couple · Bengaluru · March 2025</div>
+          </div>
+        </div>
+      </div>
+      <div class="review reveal reveal-delay-2">
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">"We forgot this wasn't real. Genuinely. One of our friends was shaking during the final act. Absolutely unmissable if you love mystery, theatre, and good food."</p>
+        <div class="review-author">
+          <div class="reviewer-avatar">SR</div>
+          <div>
+            <div class="reviewer-name">Sneha & The Gang</div>
+            <div class="reviewer-tag">Group of 6 · Mangaluru · Jan 2025</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="gallery" style="padding:8rem 0">
+  <div class="gallery-header">
+    <div class="section-label reveal">Behind the Curtain</div>
+    <h2 class="section-title reveal reveal-delay-1">Scenes from <em>the case</em></h2>
+  </div>
+  <div class="gallery-grid reveal">
+    <div class="gal-item" style="--scene-a:#1A0E0A;--scene-b:#2A1510">
+      <div class="gal-scene">🕯️</div>
+      <div class="gal-overlay"><span class="gal-caption">Candlelit Tables</span></div>
+    </div>
+    <div class="gal-item" style="--scene-a:#0A100A;--scene-b:#102010">
+      <div class="gal-scene">🔍</div>
+      <div class="gal-overlay"><span class="gal-caption">Detectives at Work</span></div>
+    </div>
+    <div class="gal-item" style="--scene-a:#1A1206;--scene-b:#2A1E0A">
+      <div class="gal-scene">📜</div>
+      <div class="gal-overlay"><span class="gal-caption">Secret Notes</span></div>
+    </div>
+    <div class="gal-item" style="--scene-a:#120A12;--scene-b:#1E101E">
+      <div class="gal-scene">🎭</div>
+      <div class="gal-overlay"><span class="gal-caption">The Confrontation</span></div>
+    </div>
+    <div class="gal-item" style="--scene-a:#0A0A14;--scene-b:#10101E">
+      <div class="gal-scene">🗡️</div>
+      <div class="gal-overlay"><span class="gal-caption">The Evidence</span></div>
+    </div>
+    <div class="gal-item" style="--scene-a:#14100A;--scene-b:#1E1810">
+      <div class="gal-scene">🕵️</div>
+      <div class="gal-overlay"><span class="gal-caption">Suspicious Characters</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="section-label reveal">Classified Inquiries</div>
+    <h2 class="section-title reveal reveal-delay-1">Questions for <em>the dossier</em></h2>
+    <div class="faq-grid reveal">
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">Is this experience scary? <span class="faq-toggle">+</span></div>
+        <div class="faq-a">It's suspenseful and dramatic — not horror. There are no jump scares or graphic content. Think Agatha Christie, not a haunted house. All ages 18+ are welcome.</div>
+      </div>
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">Can strangers team up? <span class="faq-toggle">+</span></div>
+        <div class="faq-a">Absolutely. Solo guests and small groups are seated together and briefed as a team. Our format is designed to spark conversation and collaboration between strangers. Many guests say the new friendships made were the highlight of the evening.</div>
+      </div>
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">Is food included in the ticket? <span class="faq-toggle">+</span></div>
+        <div class="faq-a">Yes — all tickets include a full 3-course meal (starter, main, dessert) crafted to complement the evening's theme. Beverages are available separately. Vegetarian, vegan, and dietary options available on request at booking.</div>
+      </div>
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">What should I wear? <span class="faq-toggle">+</span></div>
+        <div class="faq-a">Smart casual to semi-formal. The atmosphere is elegant and noir — think 1920s-inspired looks, cocktail attire, or your sharpest evening wear. Costumes are encouraged but not required. Dress to impress the suspects.</div>
+      </div>
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">How long does the event last? <span class="faq-toggle">+</span></div>
+        <div class="faq-a">The evening runs approximately 3 hours from start to finish, including the full dining experience, interactive mystery acts, and the grand reveal. Doors open 30 minutes early for arrivals and a welcome drink.</div>
+      </div>
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-q">Can I book for corporate groups? <span class="faq-toggle">+</span></div>
+        <div class="faq-a">Yes — we offer private buyouts and custom corporate events for teams of 15–60. Contact us directly for bespoke packages, custom story themes, and branded mystery nights tailored to your company culture.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section id="final-cta">
+  <div class="cta-bg"></div>
+  <div class="cta-tagline reveal">The curtain rises in 21 days</div>
+  <h2 class="cta-headline reveal reveal-delay-1">
+    The Killer Is
+    <span>Already Inside.</span>
+  </h2>
+  <p class="cta-sub reveal reveal-delay-2">The question is — are you brave enough to find out who?</p>
+  <button class="btn-final reveal reveal-delay-3" onclick="bookTicket('Senior Detective')">Reserve Your Spot Tonight</button>
+  <div class="cta-fine reveal">Limited to 40 guests per evening · No refunds after 48 hours · 18+ only</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand">The Detective's Diner</div>
+      <p class="footer-tagline">An immersive murder mystery dining experience where every seat is front row, and every guest is a suspect. Coming to a city near you.</p>
+      <div class="social-row">
+        <a class="social-btn" title="Instagram" href="#" onclick="return false">📸</a>
+        <a class="social-btn" title="TikTok" href="#" onclick="return false">▶</a>
+        <a class="social-btn" title="Twitter/X" href="#" onclick="return false">𝕏</a>
+        <a class="social-btn" title="WhatsApp" href="#" onclick="return false">💬</a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Navigate</div>
+      <ul class="footer-links">
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#experience">The Experience</a></li>
+        <li><a href="#event">Upcoming Events</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Cities</div>
+      <ul class="footer-links">
+        <li><a href="#">Bengaluru</a></li>
+        <li><a href="#">Mangaluru</a></li>
+        <li><a href="#">Mumbai — Coming Soon</a></li>
+        <li><a href="#">Hyderabad — Coming Soon</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Legal & Contact</div>
+      <ul class="footer-links">
+        <li><a href="#">Terms of Mystery</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Refund Policy</a></li>
+        <li><a href="#">hello@detectivesdiner.in</a></li>
+      </ul>
+    </div>
+  </div>
+  <hr class="footer-divider">
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2025 The Detective's Diner · All mysteries reserved</div>
+    <div class="bms-badge" onclick="bookTicket('Detective')">🎟 Book via BookMyShow</div>
+  </div>
+</footer>
+
+<script>
+// ─── PARTICLES ───────────────────────────────
+const pc = document.getElementById('particles');
+for(let i=0;i<25;i++){
+  const p = document.createElement('div');
+  p.className='particle';
+  p.style.cssText=`left:${Math.random()*100}%;animation-duration:${8+Math.random()*15}s;animation-delay:${Math.random()*10}s;--drift:${(Math.random()-.5)*2}`;
+  pc.appendChild(p);
+}
+
+// ─── RAIN CANVAS ─────────────────────────────
+const canvas = document.getElementById('rainCanvas');
+const ctx = canvas.getContext('2d');
+let drops = [];
+function resizeRain(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
+function initRain(){
+  drops=[];
+  for(let i=0;i<120;i++){
+    drops.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,l:Math.random()*20+10,v:Math.random()*5+5,o:Math.random()*.3+.05});
+  }
+}
+function drawRain(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drops.forEach(d=>{
+    ctx.strokeStyle=`rgba(201,168,76,${d.o})`;
+    ctx.lineWidth=.5;
+    ctx.beginPath();
+    ctx.moveTo(d.x,d.y);
+    ctx.lineTo(d.x-d.l*.2,d.y+d.l);
+    ctx.stroke();
+    d.y+=d.v;
+    if(d.y>canvas.height){d.y=-d.l;d.x=Math.random()*canvas.width}
+  });
+  requestAnimationFrame(drawRain);
+}
+resizeRain();initRain();drawRain();
+window.addEventListener('resize',()=>{resizeRain();initRain()});
+
+// ─── SCROLL NAV ──────────────────────────────
+const nav = document.getElementById('navbar');
+window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',window.scrollY>60));
+
+// ─── REVEAL ON SCROLL ────────────────────────
+const reveals = document.querySelectorAll('.reveal');
+const ro = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
+},{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+reveals.forEach(r=>ro.observe(r));
+
+// ─── COUNTDOWN ───────────────────────────────
+function updateCountdown(){
+  const target = new Date('2025-06-14T18:30:00');
+  const now = new Date();
+  const diff = target - now;
+  if(diff <= 0){document.getElementById('cd-d').textContent='00';return}
+  const d = Math.floor(diff/86400000);
+  const h = Math.floor((diff%86400000)/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const s = Math.floor((diff%60000)/1000);
+  document.getElementById('cd-d').textContent = String(d).padStart(2,'0');
+  document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+  document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+  document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+}
+updateCountdown();
+setInterval(updateCountdown,1000);
+
+// ─── FAQ ─────────────────────────────────────
+function toggleFaq(el){
+  const wasOpen = el.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+  if(!wasOpen) el.classList.add('open');
+}
+
+// ─── SUSPECT BOARD ───────────────────────────
+function toggleSuspect(el){
+  el.classList.toggle('active');
+  const photo = el.querySelector('.suspect-photo');
+  if(el.classList.contains('active')){
+    photo.style.borderColor='var(--crimson-bright)';
+    photo.style.boxShadow='0 0 20px rgba(192,57,43,0.3)';
+  } else {
+    photo.style.borderColor='';
+    photo.style.boxShadow='';
+  }
+}
+
+// ─── AUDIO TOGGLE ────────────────────────────
+let audioOn = false;
+let audioCtx = null;
+let noiseNode = null;
+function toggleAudio(){
+  audioOn = !audioOn;
+  const btn = document.getElementById('audioBtn');
+  const label = document.getElementById('audioLabel');
+  if(audioOn){
+    btn.classList.add('playing');
+    label.textContent = 'Playing';
+    if(!audioCtx) startAmbience();
+  } else {
+    btn.classList.remove('playing');
+    label.textContent = 'Ambience';
+    if(audioCtx){ audioCtx.suspend(); }
+  }
+}
+function startAmbience(){
+  try{
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const bufferSize = 4096;
+    noiseNode = audioCtx.createScriptProcessor(bufferSize,1,1);
+    noiseNode.onaudioprocess = e=>{
+      const out = e.outputBuffer.getChannelData(0);
+      for(let i=0;i<bufferSize;i++) out[i]=(Math.random()*2-1)*.02;
+    };
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.08;
+    const filter = audioCtx.createBiquadFilter();
+    filter.type='lowpass';filter.frequency.value=200;
+    noiseNode.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);
+  } catch(e){}
+}
+
+// ─── BOOKING ─────────────────────────────────
+function bookTicket(tier){
+  const m = document.createElement('div');
+  m.style.cssText='position:fixed;inset:0;background:rgba(10,8,6,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+  m.innerHTML=`<div style="background:var(--ink-2);border:1px solid rgba(201,168,76,0.3);padding:3rem;max-width:480px;width:90%;text-align:center">
+    <div style="font-family:var(--mono);font-size:.65rem;letter-spacing:.3em;color:var(--gold);margin-bottom:1rem;text-transform:uppercase">🎟 Booking Confirmed</div>
+    <div style="font-family:var(--serif);font-size:1.8rem;color:var(--parchment);margin-bottom:.8rem;font-weight:700">${tier}</div>
+    <div style="font-family:var(--body);color:var(--text-muted);font-style:italic;margin-bottom:2rem;line-height:1.7">In a real launch, this would redirect to BookMyShow or your payment gateway. Your seat at the table awaits, Detective.</div>
+    <button onclick="this.closest('div[style]').remove()" style="background:var(--crimson);color:var(--parchment);font-family:var(--mono);font-size:.75rem;letter-spacing:.2em;padding:1rem 2.5rem;border:none;cursor:pointer;text-transform:uppercase;transition:all .3s" onmouseover="this.style.background='var(--gold)';this.style.color='var(--ink)'" onmouseout="this.style.background='var(--crimson)';this.style.color='var(--parchment)'">Close Case File</button>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',e=>{ if(e.target===m) m.remove(); });
+}
+
+function showTrailerMsg(){
+  bookTicket('🎬 Trailer Coming Soon');
+}
+</script>
+</body>
+</html>
